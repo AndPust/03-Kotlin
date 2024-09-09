@@ -11,13 +11,5 @@ plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "0.8.0"
 }
 
-
-dependencies {
-    implementation("io.ktor:ktor-server-core:2.3.0")
-    implementation("io.ktor:ktor-server-netty:2.3.0")
-    implementation("dev.kord:kord-core:0.8.0-M17")
-    implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
-}
-
 rootProject.name = "discordBot"
 include("app")

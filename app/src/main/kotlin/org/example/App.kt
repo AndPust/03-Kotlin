@@ -9,6 +9,7 @@ import dev.kord.core.on
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
+import kotlin.math.ceil
 import kotlinx.coroutines.runBlocking
 import io.github.cdimascio.dotenv.dotenv
 
@@ -21,16 +22,69 @@ class App {
 
 class ShopInventory {
     private val categories = mapOf(
-        "Electronics" to listOf("Smartphone", "Laptop", "Headphones"),
-        "Clothing" to listOf("T-shirt", "Jeans", "Jacket"),
-        "Books" to listOf("Novel", "Textbook", "Comic")
+        "Headphones" to listOf(
+            Pair("Bose", 129),
+            Pair("Sony", 149),
+            Pair("Sennheiser", 219),
+            Pair("Audio-Technica", 79)
+        ),
+        "Keyboards" to listOf(
+            Pair("CherryMX", 250),
+            Pair("Corsair", 89),
+            Pair("Logitech", 25),
+            Pair("Ducky", 50)
+        ),
+        "Mice" to listOf(
+            Pair("Razer", 29),
+            Pair("Steelseries", 40),
+            Pair("Logitech", 12)
+        )
     )
 
-    fun getCategories(): List<String> = categories.keys.toList()
+    fun getCategories(): String {
+        var s = "Available categories:\n"
 
-    fun getItems(category: String): List<String>? = categories[category]
+        for (cat in categories.keys.toList()) {
+            s += "\t"
+            s += cat
+            s += "\n"
+        }
 
-    fun getAllItems(): List<String> = categories.values.flatten()
+        return s
+    }
+
+    fun getItems(category: String): String {
+        var s = "Items available in the " + category + " category:\n"
+
+        for (i in categories[category] ?: emptyList()) {
+            s += "\t"
+            s += i.first + "\t$" + i.second.toString()
+            s += "\n"
+        }
+
+        return s
+    }
+
+    fun getAllItems(): String {
+        var s = "List of available items:\n"
+
+        for (i in categories.values.flatten()) {
+            s += "\t"
+            s += i.first + "\t$" + i.second.toString()
+            s += "\n"
+        }
+
+        return s
+    }
+
+    fun findFirstCategoryAndList(content: String): String {
+        for (cat in categories.keys.toList()) {
+            if ( cat.lowercase().dropLast(ceil(cat.length*0.25).toInt()) in content ) {
+                return this.getItems(cat)
+            }
+        }
+        return "No valid category found in the request."
+    }
 }
 
 fun main() {
@@ -42,22 +96,29 @@ fun main() {
         val bot = Kord(token)
 
         bot.on<MessageCreateEvent> {
-            if (message.author?.isBot != false) return@on
+            if (message.author?.isBot == true) return@on
+            val content = message.content.lowercase()
+            var response = ""
 
-            val content = message.content.toLowerCase()
-            val response = when {
-                "categories" in content -> "Available categories: ${shopInventory.getCategories().joinToString(", ")}"
-                "items" in content -> "All items: ${shopInventory.getAllItems().joinToString(", ")}"
-                "in" in content -> {
-                    val category = content.substringAfter("in").trim()
-                    val items = shopInventory.getItems(category)
-                    if (items != null) "Items in $category: ${items.joinToString(", ")}"
-                    else "Category not found."
-                }
-                else -> "I can help you with: categories, items, or items in a specific category."
+            if ( content == "" ) {
+                response = "As an non-approved bot I don't have access to content of messages not directed to me. I can help you with:  listing shop items, listing categories or listing items in a specific category."
+                message.channel.createMessage(response)
+                return@on
+            }
+
+            response = when {
+                    "in" in content -> shopInventory.findFirstCategoryAndList(content)
+                    "categorie" in content || "category" in content -> shopInventory.getCategories()
+                    "item" in content -> shopInventory.getAllItems()
+                    else -> ""
+            }
+            
+            if ( response == "" ) {
+                response = "I can help you with:  listing shop items, listing categories or listing items in a specific category."
             }
 
             message.channel.createMessage(response)
+
         }
 
         bot.login()

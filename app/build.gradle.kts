@@ -22,6 +22,10 @@ repositories {
 dependencies {
     // This dependency is used by the application.
     implementation(libs.guava)
+    implementation("io.ktor:ktor-server-core:2.3.0")
+    implementation("io.ktor:ktor-server-netty:2.3.0")
+    implementation("dev.kord:kord-core:0.8.0-M17")
+    implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
 }
 
 testing {
