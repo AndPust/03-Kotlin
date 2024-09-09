@@ -9,3 +9,6 @@ To run the application run the gradle script in the main directory:
 
 Link to the chat: https://discord.gg/U9ZscjGn
 
+Gzipped MP4 demo here: https://github.com/AndPust/03-Kotlin/blob/main/demos/03-Kotlin.mp4.gz
+
+✅ 4.5 requirement: https://github.com/AndPust/03-Kotlin/commit/a082f97f9e2c927d4b5a39d0924e5a6bdc8fcd53
