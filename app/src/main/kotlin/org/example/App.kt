@@ -3,6 +3,15 @@
  */
 package org.example
 
+import dev.kord.core.*
+import dev.kord.core.event.message.MessageCreateEvent
+import dev.kord.core.on
+import io.ktor.server.application.*
+import io.ktor.server.engine.*
+import io.ktor.server.netty.*
+import kotlinx.coroutines.runBlocking
+import io.github.cdimascio.dotenv.dotenv
+
 class App {
     val greeting: String
         get() {
@@ -10,6 +19,51 @@ class App {
         }
 }
 
+class ShopInventory {
+    private val categories = mapOf(
+        "Electronics" to listOf("Smartphone", "Laptop", "Headphones"),
+        "Clothing" to listOf("T-shirt", "Jeans", "Jacket"),
+        "Books" to listOf("Novel", "Textbook", "Comic")
+    )
+
+    fun getCategories(): List<String> = categories.keys.toList()
+
+    fun getItems(category: String): List<String>? = categories[category]
+
+    fun getAllItems(): List<String> = categories.values.flatten()
+}
+
 fun main() {
-    println(App().greeting)
+    val dotenv = dotenv()
+    val shopInventory = ShopInventory()
+    val token = dotenv["DISCORD_BOT_TOKEN"] ?: error("DISCORD_BOT_TOKEN not found in .env file")
+
+    runBlocking {
+        val bot = Kord(token)
+
+        bot.on<MessageCreateEvent> {
+            if (message.author?.isBot != false) return@on
+
+            val content = message.content.toLowerCase()
+            val response = when {
+                "categories" in content -> "Available categories: ${shopInventory.getCategories().joinToString(", ")}"
+                "items" in content -> "All items: ${shopInventory.getAllItems().joinToString(", ")}"
+                "in" in content -> {
+                    val category = content.substringAfter("in").trim()
+                    val items = shopInventory.getItems(category)
+                    if (items != null) "Items in $category: ${items.joinToString(", ")}"
+                    else "Category not found."
+                }
+                else -> "I can help you with: categories, items, or items in a specific category."
+            }
+
+            message.channel.createMessage(response)
+        }
+
+        bot.login()
+    }
+
+    embeddedServer(Netty, port = 8080) {
+        // Ktor server configuration if needed
+    }.start(wait = true)
 }
